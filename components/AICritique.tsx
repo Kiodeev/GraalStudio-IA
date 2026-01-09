@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
-import { critiqueArt } from '../services/geminiService';
-import { playSound } from '../services/audioService';
+import { critiqueArt } from '../services/geminiService.ts';
+import { playSound } from '../services/audioService.ts';
 
 interface AICritiqueProps {
   externalImage?: string | null;

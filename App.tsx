@@ -1,9 +1,9 @@
 
 import React, { useState } from 'react';
-import PixelEditor from './components/PixelEditor';
-import AIGenerator from './components/AIGenerator';
-import AICritique from './components/AICritique';
-import { TabType } from './types';
+import PixelEditor from './components/PixelEditor.tsx';
+import AIGenerator from './components/AIGenerator.tsx';
+import AICritique from './components/AICritique.tsx';
+import { TabType } from './types.ts';
 
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabType>('editor');

@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { generateArtReference } from '../services/geminiService';
+import { generateArtReference } from '../services/geminiService.ts';
 
 interface AIGeneratorProps {
   onUseAsRef: (url: string) => void;

@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>Wickler Studio | Pixel Art Pro</title>
+    <title>Wickler Studio | Professional Pixel Art</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
     <style>
@@ -26,19 +26,17 @@
         background-size: 16px 16px; background-color: #050505;
       }
       
-      /* Animações Wickler */
-      @keyframes glass-in { from { opacity: 0; transform: translateY(20px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
-      .animate-glass { animation: glass-in 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
-      
-      @keyframes pulse-glow { 0% { box-shadow: 0 0 5px rgba(99, 102, 241, 0.2); } 50% { box-shadow: 0 0 20px rgba(99, 102, 241, 0.4); } 100% { box-shadow: 0 0 5px rgba(99, 102, 241, 0.2); } }
-      .glow-active { animation: pulse-glow 2s infinite; border-color: var(--accent) !important; }
+      @keyframes glass-in { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+      .animate-glass { animation: glass-in 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
       
       canvas { cursor: crosshair; touch-action: none; }
       .safe-pb { padding-bottom: env(safe-area-inset-bottom); }
       
-      .drawer-blur { backdrop-filter: blur(20px) saturate(180%); background: rgba(10, 10, 12, 0.85); }
-      
+      .drawer-blur { backdrop-filter: blur(25px) saturate(200%); background: rgba(8, 8, 10, 0.9); }
       .no-scrollbar::-webkit-scrollbar { display: none; }
+      
+      /* Ajuste para botões não quebrarem em telas pequenas */
+      .compact-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); gap: 8px; }
     </style>
     <script type="importmap">
 {

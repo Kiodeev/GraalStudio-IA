@@ -1,8 +1,23 @@
 
 import { GoogleGenAI } from "@google/genai";
 
+// Função auxiliar para obter a chave de forma segura no navegador
+const getApiKey = () => {
+  try {
+    return process.env.API_KEY || "";
+  } catch (e) {
+    return "";
+  }
+};
+
 export const generateArtReference = async (prompt: string): Promise<string | null> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const apiKey = getApiKey();
+  if (!apiKey) {
+    console.error("API Key não encontrada.");
+    return null;
+  }
+  
+  const ai = new GoogleGenAI({ apiKey });
   const fullPrompt = `Crie um asset de pixel art para o jogo Graal Online Classic. O item deve ser: ${prompt}. Estilo: 32x32 pixels, fundo transparente (ou preto para fácil remoção), cores vibrantes, sombreamento simples de jogo retro.`;
   
   try {
@@ -32,7 +47,10 @@ export const generateArtReference = async (prompt: string): Promise<string | nul
 };
 
 export const critiqueArt = async (imageData: string): Promise<string> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const apiKey = getApiKey();
+  if (!apiKey) return "API Key ausente. Configure o ambiente corretamente.";
+
+  const ai = new GoogleGenAI({ apiKey });
   const base64Data = imageData.includes(',') ? imageData.split(',')[1] : imageData;
   
   try {
@@ -45,10 +63,9 @@ export const critiqueArt = async (imageData: string): Promise<string> => {
         ],
       },
     });
-    // IMPORTANTE: .text é uma propriedade, não um método
     return response.text || "O Mestre está sem palavras no momento.";
   } catch (error) {
     console.error("Erro na Crítica IA:", error);
-    return "Ocorreu um erro ao consultar o Mestre Pixel. Verifique sua conexão.";
+    return "Erro ao consultar o Mestre. No GitHub Pages, certifique-se de que as chaves de ambiente estão configuradas.";
   }
 };

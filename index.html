@@ -6,16 +6,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>Graal Craft IA - Studio</title>
+    <title>Graal Craft IA - Studio Profissional</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
-      :root { --bg: #09090b; --accent: #6366f1; }
+      :root { 
+        --bg: #0d1a0d; /* Verde floresta profundo estilo Graal */
+        --panel: #1a2e1a;
+        --accent: #4ade80; 
+        --wood: #3e2723;
+      }
       * { 
         -webkit-tap-highlight-color: transparent; 
         box-sizing: border-box;
         scrollbar-width: thin;
-        scrollbar-color: #27272a transparent;
+        scrollbar-color: #2e4d2e transparent;
       }
       body, html { 
         margin: 0; padding: 0; width: 100%; height: 100%; 
@@ -24,27 +29,37 @@
         overscroll-behavior: none;
       }
       #root { width: 100%; height: 100%; }
+      
       .pixel-render { 
         image-rendering: pixelated; 
         image-rendering: -moz-crisp-edges;
         image-rendering: crisp-edges; 
       }
+      
       .checkerboard {
-        background-image: linear-gradient(45deg, #121214 25%, transparent 25%), 
-                          linear-gradient(-45deg, #121214 25%, transparent 25%), 
-                          linear-gradient(45deg, transparent 75%, #121214 75%), 
-                          linear-gradient(-45deg, transparent 75%, #121214 75%);
-        background-size: 20px 20px; background-color: #1a1a1e;
+        background-image: linear-gradient(45deg, #162616 25%, transparent 25%), 
+                          linear-gradient(-45deg, #162616 25%, transparent 25%), 
+                          linear-gradient(45deg, transparent 75%, #162616 75%), 
+                          linear-gradient(-45deg, transparent 75%, #162616 75%);
+        background-size: 20px 20px; 
+        background-color: #1a2e1a;
       }
+
+      .graal-ui {
+        background: linear-gradient(180deg, #2e4d2e 0%, #1a2e1a 100%);
+        border: 2px solid #3e6b3e;
+        box-shadow: inset 0 2px 4px rgba(255,255,255,0.1);
+      }
+
       .custom-scroll::-webkit-scrollbar { width: 4px; }
       .custom-scroll::-webkit-scrollbar-track { background: transparent; }
-      .custom-scroll::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 10px; }
-      .scroll-container {
-        height: 100%; overflow-y: auto; overflow-x: hidden;
-        -webkit-overflow-scrolling: touch; padding-bottom: 150px;
-      }
-      .pt-safe { padding-top: env(safe-area-inset-top); }
+      .custom-scroll::-webkit-scrollbar-thumb { background: #3e6b3e; border-radius: 10px; }
+      
       canvas { touch-action: none; user-select: none; -webkit-user-drag: none; }
+      
+      /* Animação de entrada para evitar o "flash" preto */
+      .fade-in { animation: fadeIn 0.5s ease-out; }
+      @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
   <script type="importmap">
 {
@@ -58,6 +73,6 @@
 </script>
 </head>
   <body>
-    <div id="root"></div>
+    <div id="root" class="fade-in"></div>
   </body>
 </html>

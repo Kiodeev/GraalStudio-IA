@@ -1,6 +1,6 @@
 {
-  "name": "GRAAL CRAFT IA",
-  "description": "A comprehensive suite for Graal Online Classic artists featuring a pixel art editor, AI reference generator, and automated art critique.",
+  "name": "Graal Studio Genesis",
+  "description": "Estação de trabalho profissional para artistas de Graal Online Classic com IA e Templates.",
   "requestFramePermissions": [
     "camera"
   ]

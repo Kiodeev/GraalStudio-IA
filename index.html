@@ -6,37 +6,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>Wickler Studio | Professional Pixel Art</title>
+    <title>Wickler Genesis | Graal Pixel Art</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
     <style>
-      :root { --bg: #000000; --accent: #6366f1; }
       body { 
-        background: var(--bg); color: #ffffff; 
+        background: #000; 
+        color: #fff; 
         font-family: 'Plus Jakarta Sans', sans-serif; 
-        overscroll-behavior: none; overflow: hidden; height: 100vh;
-        -webkit-tap-highlight-color: transparent;
+        overscroll-behavior: none; 
+        overflow: hidden;
       }
-      .pixel-render { image-rendering: pixelated; }
-      .checkerboard {
-        background-image: linear-gradient(45deg, #0a0a0a 25%, transparent 25%), 
-                          linear-gradient(-45deg, #0a0a0a 25%, transparent 25%), 
-                          linear-gradient(45deg, transparent 75%, #0a0a0a 75%), 
-                          linear-gradient(-45deg, transparent 75%, #0a0a0a 75%);
-        background-size: 16px 16px; background-color: #050505;
-      }
-      
-      @keyframes glass-in { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
-      .animate-glass { animation: glass-in 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
-      
-      canvas { cursor: crosshair; touch-action: none; }
       .safe-pb { padding-bottom: env(safe-area-inset-bottom); }
-      
-      .drawer-blur { backdrop-filter: blur(25px) saturate(200%); background: rgba(8, 8, 10, 0.9); }
-      .no-scrollbar::-webkit-scrollbar { display: none; }
-      
-      /* Ajuste para botões não quebrarem em telas pequenas */
-      .compact-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); gap: 8px; }
     </style>
     <script type="importmap">
 {

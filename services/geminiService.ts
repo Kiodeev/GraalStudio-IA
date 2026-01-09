@@ -2,34 +2,23 @@
 import { GoogleGenAI } from "@google/genai";
 
 const getApiKey = () => {
-  // Verifica de forma segura se process e process.env existem antes de acessar
   if (typeof process !== 'undefined' && process.env && process.env.API_KEY) {
     return process.env.API_KEY;
   }
-  // No navegador puro, process pode não existir.
-  // A plataforma injeta a chave, mas o código deve ser resiliente.
   return "";
 };
 
 export const generateArtReference = async (prompt: string): Promise<string | null> => {
   const apiKey = getApiKey();
-  if (!apiKey) {
-    console.warn("API Key não detectada. Verifique as configurações de ambiente.");
-    return null;
-  }
+  if (!apiKey) return null;
   
   const ai = new GoogleGenAI({ apiKey });
-  const fullPrompt = `Crie um asset de pixel art para o jogo Graal Online Classic. O item deve ser: ${prompt}. Estilo: 32x32 pixels, fundo transparente ou preto, cores vibrantes, sombreamento de jogo retro.`;
+  const fullPrompt = `Gere uma referência profissional de pixel art para assets do jogo Graal Online Classic. Descrição: ${prompt}. Estilo: 16-bit, sombras nítidas, sem dithering excessivo, fundo preto sólido. Focado em visibilidade mobile.`;
   
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash-image',
       contents: { parts: [{ text: fullPrompt }] },
-      config: { 
-        imageConfig: { 
-          aspectRatio: "1:1"
-        } 
-      },
     });
 
     const candidates = response.candidates;
@@ -50,7 +39,7 @@ export const generateArtReference = async (prompt: string): Promise<string | nul
 
 export const critiqueArt = async (imageData: string): Promise<string> => {
   const apiKey = getApiKey();
-  if (!apiKey) return "Aviso: API Key não configurada. A análise não pôde ser iniciada.";
+  if (!apiKey) return "API Key não configurada.";
 
   const ai = new GoogleGenAI({ apiKey });
   const base64Data = imageData.includes(',') ? imageData.split(',')[1] : imageData;
@@ -61,13 +50,24 @@ export const critiqueArt = async (imageData: string): Promise<string> => {
       contents: {
         parts: [
           { inlineData: { mimeType: 'image/png', data: base64Data } },
-          { text: "Você é um mestre de pixel art do Graal Online Classic. Avalie esta imagem tecnicamente. Fale sobre: 1. AA, 2. Sombreamento, 3. Cores, 4. Anatomia. Seja direto e encorajador em português." }
+          { text: `Você é o Mestre Wickler, o maior especialista em Pixel Art para Graal Online Classic.
+          Sua análise deve ser EXTREMAMENTE TÉCNICA e RÍGIDA.
+          
+          FOCO DA ANÁLISE:
+          1. Jaggies: Identifique onde as curvas não estão suaves.
+          2. Banding: Avise se o degradê de cores está formando blocos feios.
+          3. Orphan Pixels: Aponte pixels sujos ou isolados que não fazem sentido.
+          4. Readability: Diga se o sprite é visível no tamanho original do jogo (32x32).
+          5. Shading: Verifique se a luz é consistente.
+          
+          ESTILO DE RESPOSTA:
+          Seja direto, profissional e dê 3 passos concretos para melhorar esta arte imediatamente. Use termos técnicos de pixel art. Português.` }
         ],
       },
     });
-    return response.text || "O Mestre não conseguiu analisar esta peça.";
+    return response.text || "O Mestre está observando... mas nada disse.";
   } catch (error) {
     console.error("Erro na Crítica IA:", error);
-    return "O Mestre encontrou um erro técnico na conexão.";
+    return "Ocorreu uma interferência no Oráculo. Tente novamente.";
   }
 };

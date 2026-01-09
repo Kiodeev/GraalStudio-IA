@@ -6,15 +6,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>Graal Craft IA - Studio Profissional</title>
+    <title>Graal Craft IA - Studio</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
       :root { 
-        --bg: #0d1a0d; 
-        --panel: #1a2e1a;
-        --accent: #4ade80; 
-        --wood: #3e2723;
+        --bg: #09090b; 
+        --panel: #18181b;
+        --accent: #6366f1; 
       }
       * { 
         -webkit-tap-highlight-color: transparent; 
@@ -22,41 +21,33 @@
       }
       body, html { 
         margin: 0; padding: 0; width: 100%; height: 100%; 
-        background: var(--bg); color: #fff; 
-        font-family: 'Inter', sans-serif; 
+        background: var(--bg); color: #fafafa; 
+        font-family: 'Plus Jakarta Sans', sans-serif; 
         overscroll-behavior: none;
       }
-      #root { 
-        width: 100%; 
-        height: 100%; 
-        min-height: 100vh;
-        display: flex;
-        flex-direction: column;
-      }
+      #root { width: 100%; height: 100%; display: flex; flex-direction: column; }
       
       .pixel-render { 
         image-rendering: pixelated; 
-        image-rendering: -moz-crisp-edges;
         image-rendering: crisp-edges; 
       }
       
       .checkerboard {
-        background-image: linear-gradient(45deg, #162616 25%, transparent 25%), 
-                          linear-gradient(-45deg, #162616 25%, transparent 25%), 
-                          linear-gradient(45deg, transparent 75%, #162616 75%), 
-                          linear-gradient(-45deg, transparent 75%, #162616 75%);
-        background-size: 20px 20px; 
-        background-color: #1a2e1a;
+        background-image: linear-gradient(45deg, #111113 25%, transparent 25%), 
+                          linear-gradient(-45deg, #111113 25%, transparent 25%), 
+                          linear-gradient(45deg, transparent 75%, #111113 75%), 
+                          linear-gradient(-45deg, transparent 75%, #111113 75%);
+        background-size: 16px 16px; 
+        background-color: #0c0c0e;
       }
 
       .custom-scroll::-webkit-scrollbar { width: 4px; }
-      .custom-scroll::-webkit-scrollbar-track { background: transparent; }
-      .custom-scroll::-webkit-scrollbar-thumb { background: #3e6b3e; border-radius: 10px; }
+      .custom-scroll::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 10px; }
       
-      canvas { touch-action: none; user-select: none; }
-      
-      .fade-in { animation: fadeIn 0.8s ease-out forwards; }
-      @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+      .loader-text {
+        animation: pulse 1.5s infinite;
+      }
+      @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
     </style>
     <script type="importmap">
     {
@@ -70,10 +61,12 @@
     </script>
   </head>
   <body>
-    <div id="root" class="fade-in">
-      <div style="display:flex; align-items:center; justify-content:center; height:100vh; color:#3e6b3e; font-weight:900; letter-spacing:0.2em; font-size:10px; text-transform:uppercase;">
-        Carregando Studio...
+    <div id="root">
+      <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; gap:20px;">
+        <div style="width:40px; height:40px; border:3px solid #27272a; border-top-color:#6366f1; border-radius:50%; animation: spin 1s linear infinite;"></div>
+        <div class="loader-text" style="color:#71717a; font-weight:800; letter-spacing:0.2em; font-size:10px; text-transform:uppercase;">Iniciando Studio...</div>
       </div>
+      <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
     </div>
     <script type="module" src="index.tsx"></script>
   </body>

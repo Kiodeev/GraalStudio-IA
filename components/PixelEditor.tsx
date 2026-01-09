@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { playSound } from '../services/audioService';
+import { playSound } from '../services/audioService.ts';
 
 interface PixelEditorProps {
   onExport: (dataUrl: string) => void;
@@ -28,7 +28,7 @@ const PixelEditor: React.FC<PixelEditorProps> = ({ onExport, onCritiqueRequest, 
 
   const palette = [
     '#ffffff', '#000000', '#ff0000', '#00ff00', '#0000ff', '#ffff00', 
-    '#ff00ff', '#00ffff', '#808080', '#c0c0c0', '#4a4a4a', '#f3a35f', 
+    '#ff00ff', '#00ffff', '#71717a', '#a1a1aa', '#3f3f46', '#f3a35f', 
     '#8e5d3c', '#4b321c', '#1a1c2c', '#5d275d', '#b13e53', '#ef7d57', 
     '#ffcd75', '#a7f070', '#38b764', '#257179', '#29366f', '#3b5dc9'
   ];
@@ -213,9 +213,9 @@ const PixelEditor: React.FC<PixelEditorProps> = ({ onExport, onCritiqueRequest, 
   };
 
   return (
-    <div className="flex flex-col h-full bg-[#0d1a0d] overflow-hidden select-none">
-      <main className="flex-1 relative checkerboard flex items-center justify-center p-4 overflow-hidden touch-none">
-        <div className="relative shadow-2xl transition-transform duration-200" style={{ transform: `scale(${zoom})` }}>
+    <div className="flex flex-col h-full bg-[#09090b] overflow-hidden select-none">
+      <main className="flex-1 relative checkerboard flex items-center justify-center p-6 overflow-hidden touch-none">
+        <div className="relative transition-transform duration-300 ease-out" style={{ transform: `scale(${zoom})` }}>
           {activeReference && (
             <img src={activeReference} className="absolute inset-0 w-full h-full z-0 pixel-render pointer-events-none opacity-40" alt="ref" />
           )}
@@ -225,7 +225,7 @@ const PixelEditor: React.FC<PixelEditorProps> = ({ onExport, onCritiqueRequest, 
             height={gridSize.h}
             onMouseDown={handleStart} onMouseMove={handleMove} onMouseUp={handleEnd} onMouseLeave={handleEnd}
             onTouchStart={handleStart} onTouchMove={handleMove} onTouchEnd={handleEnd}
-            className="relative z-10 pixel-render bg-transparent border-2 border-[#3e6b3e]"
+            className="relative z-10 pixel-render bg-transparent border border-zinc-700 shadow-[0_0_50px_rgba(0,0,0,0.5)]"
             style={{ 
                 width: 'min(85vw, 65vh)', 
                 height: gridSize.h === 64 ? 'min(170vw, 130vh)' : 'min(85vw, 65vh)',
@@ -233,99 +233,101 @@ const PixelEditor: React.FC<PixelEditorProps> = ({ onExport, onCritiqueRequest, 
             }}
           />
           {showGrid && (
-            <div className="absolute inset-0 z-20 pointer-events-none opacity-[0.1]" 
+            <div className="absolute inset-0 z-20 pointer-events-none opacity-[0.15]" 
                  style={{ 
                      backgroundSize: `calc(100% / ${gridSize.w}) calc(100% / ${gridSize.h})`, 
-                     backgroundImage: 'linear-gradient(to right, #4ade80 0.5px, transparent 0.5px), linear-gradient(to bottom, #4ade80 0.5px, transparent 0.5px)' 
+                     backgroundImage: 'linear-gradient(to right, #71717a 0.5px, transparent 0.5px), linear-gradient(to bottom, #71717a 0.5px, transparent 0.5px)' 
                  }} />
           )}
         </div>
 
-        {/* Floating Controls */}
-        <div className="absolute bottom-6 left-4 flex flex-col gap-3 z-40">
-           <div className="flex flex-col bg-[#1a2e1a]/90 backdrop-blur-md border-2 border-[#3e6b3e] rounded-2xl overflow-hidden shadow-2xl">
-             <button onClick={()=>{setZoom(z=>Math.min(z+0.5, 6)); playSound.tool();}} className="p-3 hover:bg-green-900 active:scale-90 transition-all text-lg">➕</button>
-             <button onClick={()=>{setZoom(z=>Math.max(z-0.5, 0.5)); playSound.tool();}} className="p-3 hover:bg-green-900 active:scale-90 transition-all text-lg">➖</button>
+        {/* Floating Side Controls */}
+        <div className="absolute bottom-10 left-6 flex flex-col gap-4 z-40">
+           <div className="flex flex-col bg-zinc-900/90 backdrop-blur-xl border border-zinc-800 rounded-2xl overflow-hidden shadow-2xl">
+             <button onClick={()=>{setZoom(z=>Math.min(z+0.5, 6)); playSound.tool();}} className="p-4 hover:bg-zinc-800 active:scale-90 transition-all text-xl">➕</button>
+             <button onClick={()=>{setZoom(z=>Math.max(z-0.5, 0.5)); playSound.tool();}} className="p-4 hover:bg-zinc-800 active:scale-90 transition-all text-xl">➖</button>
            </div>
-           <button onClick={undo} disabled={hIndex <= 0} className="w-14 h-14 bg-[#1a2e1a]/90 backdrop-blur-md border-2 border-[#3e6b3e] rounded-2xl flex items-center justify-center shadow-2xl disabled:opacity-30 active:scale-90 transition-all text-xl">↩️</button>
+           <button onClick={undo} disabled={hIndex <= 0} className="w-16 h-16 bg-zinc-900/90 backdrop-blur-xl border border-zinc-800 rounded-2xl flex items-center justify-center shadow-2xl disabled:opacity-30 active:scale-90 transition-all text-2xl">↩️</button>
         </div>
 
-        <div className="absolute top-4 right-4 flex flex-col items-end gap-4 z-40">
-            <div className="bg-[#1a2e1a]/90 p-1 rounded-xl border-2 border-[#3e6b3e] shadow-2xl">
-                <div className="w-16 h-16 rounded-lg overflow-hidden border border-green-900">
+        <div className="absolute top-6 right-6 flex flex-col items-end gap-5 z-40">
+            <div className="bg-zinc-900/90 p-1.5 rounded-2xl border border-zinc-800 shadow-2xl">
+                <div className="w-20 h-20 rounded-xl overflow-hidden border border-zinc-800">
                    <canvas ref={previewRef} width={gridSize.w} height={gridSize.h} className="w-full h-full pixel-render" />
                 </div>
             </div>
-            <button onClick={clearCanvas} className="w-12 h-12 bg-red-900/90 border-2 border-red-700 rounded-xl flex items-center justify-center shadow-2xl hover:bg-red-700 transition-colors text-lg">🗑️</button>
             
-            <div className="flex flex-col bg-[#1a2e1a]/90 backdrop-blur-md border-2 border-[#3e6b3e] rounded-xl p-1 gap-1">
-              <button onClick={()=>{setBrushSize(Math.min(10, brushSize+1)); playSound.tool();}} className="p-2 text-xs font-black text-green-400">+</button>
-              <div className="text-center font-black text-[9px] text-green-700">{brushSize}px</div>
-              <button onClick={()=>{setBrushSize(Math.max(1, brushSize-1)); playSound.tool();}} className="p-2 text-xs font-black text-green-400">-</button>
-            </div>
-
-            <button onClick={()=>{setShowProps(!showProps); playSound.tool();}} className={`w-14 h-14 rounded-full shadow-2xl border-2 flex items-center justify-center transition-all active:scale-90 ${showProps ? 'bg-green-600 border-green-400 rotate-90' : 'bg-[#1a2e1a] border-[#3e6b3e]'}`}>
-               ⚙️
+            <button onClick={()=>{setShowProps(!showProps); playSound.tool();}} className={`w-16 h-16 rounded-2xl shadow-2xl border-2 flex items-center justify-center transition-all active:scale-90 ${showProps ? 'bg-indigo-600 border-indigo-400 rotate-90' : 'bg-zinc-900 border-zinc-800 text-zinc-400'}`}>
+               <span className="text-2xl">⚙️</span>
             </button>
         </div>
       </main>
 
-      <footer className="h-24 bg-[#1a2e1a] border-t-2 border-[#3e6b3e] flex items-center justify-around px-4 z-50 shrink-0">
+      <footer className="h-28 bg-[#09090b] border-t border-zinc-800 flex items-center justify-around px-6 z-50 shrink-0">
         <ToolBtn active={tool==='pencil'} onClick={()=>{setTool('pencil'); playSound.tool();}} icon="✏️" label="Lápis" />
         <ToolBtn active={tool==='eraser'} onClick={()=>{setTool('eraser'); playSound.tool();}} icon="🧹" label="Apagar" />
         <ToolBtn active={tool==='fill'} onClick={()=>{setTool('fill'); playSound.tool();}} icon="🧪" label="Balde" />
         <ToolBtn active={tool==='picker'} onClick={()=>{setTool('picker'); playSound.tool();}} icon="💉" label="Cor" />
-        <div className="flex flex-col items-center gap-1">
-          <div className="w-14 h-14 rounded-2xl border-2 border-green-600 overflow-hidden relative shadow-lg active:scale-95 transition-transform">
+        
+        <div className="flex flex-col items-center gap-2">
+          <div className="w-14 h-14 rounded-2xl border-2 border-zinc-700 overflow-hidden relative shadow-lg active:scale-95 transition-transform group">
+            <div className="absolute inset-0 bg-white group-hover:opacity-10 transition-opacity pointer-events-none z-10"></div>
             <input type="color" value={color} onChange={e=>{setColor(e.target.value); playSound.tool();}} className="absolute inset-0 w-[200%] h-[200%] -top-1/2 -left-1/2 cursor-pointer" />
           </div>
-          <span className="text-[8px] font-black uppercase text-green-800 tracking-widest">Paleta</span>
+          <span className="text-[8px] font-bold uppercase text-zinc-600 tracking-widest">Picker</span>
         </div>
       </footer>
 
-      <div className={`fixed inset-x-0 bottom-0 bg-[#0d1a0d]/98 backdrop-blur-2xl border-t-4 border-[#3e6b3e] transition-transform duration-500 z-[60] p-8 pb-12 flex flex-col gap-8 rounded-t-[40px] ${showProps ? 'translate-y-0 shadow-2xl' : 'translate-y-full'}`}>
-        <div className="w-12 h-1.5 bg-green-900 rounded-full mx-auto -mt-2 mb-2" />
+      {/* Settings Bottom Sheet */}
+      <div className={`fixed inset-x-0 bottom-0 bg-zinc-950/98 backdrop-blur-3xl border-t border-zinc-800 transition-transform duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] z-[60] p-10 pb-16 flex flex-col gap-10 rounded-t-[48px] ${showProps ? 'translate-y-0 shadow-[0_-50px_100px_rgba(0,0,0,0.8)]' : 'translate-y-full'}`}>
+        <div className="w-16 h-1.5 bg-zinc-800 rounded-full mx-auto -mt-4 mb-4" />
         
-        <div className="space-y-4">
-          <h3 className="text-[10px] font-black text-green-400 uppercase tracking-widest">Formatos de Jogo</h3>
+        <div className="space-y-6">
+          <h3 className="text-[10px] font-black text-indigo-400 uppercase tracking-widest flex items-center gap-2">
+            <span className="w-4 h-[1px] bg-indigo-500"></span> Canvas Graal
+          </h3>
           <div className="grid grid-cols-2 gap-4">
             <SizeBtn active={gridSize.h===32} onClick={()=>{setGridSize({w:32, h:32}); setShowProps(false); playSound.success();}} label="Head/Hat (32x32)" />
             <SizeBtn active={gridSize.h===64} onClick={()=>{setGridSize({w:32, h:64}); setShowProps(false); playSound.success();}} label="Body (32x64)" />
           </div>
         </div>
 
-        <div className="space-y-4">
-          <h3 className="text-[10px] font-black text-green-400 uppercase tracking-widest">Cores Graal</h3>
-          <div className="flex gap-3 overflow-x-auto pb-2 custom-scroll">
+        <div className="space-y-6">
+          <h3 className="text-[10px] font-black text-indigo-400 uppercase tracking-widest flex items-center gap-2">
+            <span className="w-4 h-[1px] bg-indigo-500"></span> Paleta de Estúdio
+          </h3>
+          <div className="flex gap-4 overflow-x-auto pb-4 custom-scroll">
              {recentColors.map((c, i) => (
-               <button key={i} onClick={()=>{setColor(c); playSound.tool();}} className="w-10 h-10 rounded-lg shrink-0 border-2 border-green-900" style={{backgroundColor: c}} />
+               <button key={i} onClick={()=>{setColor(c); playSound.tool();}} className="w-12 h-12 rounded-xl shrink-0 border border-zinc-800 shadow-lg" style={{backgroundColor: c}} />
              ))}
              {palette.map((p, i) => (
-               <button key={'p'+i} onClick={()=>{setColor(p); playSound.tool();}} className="w-10 h-10 rounded-lg shrink-0 border-2 border-[#1a2e1a]" style={{backgroundColor: p}} />
+               <button key={'p'+i} onClick={()=>{setColor(p); playSound.tool();}} className="w-12 h-12 rounded-xl shrink-0 border border-zinc-800/50" style={{backgroundColor: p}} />
              ))}
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-           <button onClick={()=>{onExport(canvasRef.current!.toDataURL()); playSound.success();}} className="py-5 bg-green-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest active:scale-95 transition-all shadow-lg border-b-4 border-green-800">Exportar PNG</button>
-           <button onClick={()=>{onCritiqueRequest(canvasRef.current!.toDataURL()); playSound.magic();}} className="py-5 bg-amber-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest active:scale-95 transition-all shadow-lg border-b-4 border-amber-800">Avaliar IA</button>
+        <div className="grid grid-cols-2 gap-5">
+           <button onClick={()=>{onExport(canvasRef.current!.toDataURL()); playSound.success();}} className="py-6 bg-zinc-100 text-black rounded-2xl font-black text-xs uppercase tracking-widest active:scale-95 transition-all shadow-xl">Exportar PNG</button>
+           <button onClick={()=>{onCritiqueRequest(canvasRef.current!.toDataURL()); playSound.magic();}} className="py-6 bg-indigo-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest active:scale-95 transition-all shadow-xl border-b-4 border-indigo-800">Avaliar IA</button>
         </div>
+        
+        <button onClick={clearCanvas} className="w-full py-4 text-red-500 text-[10px] font-black uppercase tracking-widest opacity-50 hover:opacity-100 transition-opacity mt-4">Resetar Canvas Completo</button>
       </div>
     </div>
   );
 };
 
 const ToolBtn = ({ active, onClick, icon, label }: any) => (
-  <button onClick={onClick} className="flex flex-col items-center gap-1 group">
-    <div className={`w-16 h-16 rounded-2xl flex items-center justify-center text-3xl transition-all group-active:scale-90 ${active ? 'bg-green-600 text-white shadow-xl shadow-green-900/40 scale-110 border-2 border-green-400' : 'bg-green-950 text-green-800 border border-green-900'}`}>
+  <button onClick={onClick} className="flex flex-col items-center gap-2 group">
+    <div className={`w-16 h-16 rounded-2xl flex items-center justify-center text-3xl transition-all duration-300 ${active ? 'bg-indigo-600 text-white shadow-2xl shadow-indigo-500/30 scale-110 border border-indigo-400' : 'bg-zinc-900 text-zinc-500 border border-zinc-800 hover:border-zinc-700'}`}>
       {icon}
     </div>
-    <span className={`text-[8px] font-black uppercase tracking-widest ${active ? 'text-green-400' : 'text-green-900'}`}>{label}</span>
+    <span className={`text-[8px] font-bold uppercase tracking-widest transition-colors ${active ? 'text-indigo-400' : 'text-zinc-600'}`}>{label}</span>
   </button>
 );
 
 const SizeBtn = ({ active, onClick, label }: any) => (
-  <button onClick={onClick} className={`py-5 rounded-2xl text-[10px] font-black border-2 transition-all ${active ? 'bg-green-900 border-green-500 text-white' : 'bg-[#0a140a] border-green-950 text-green-900'}`}>
+  <button onClick={onClick} className={`py-6 rounded-2xl text-[10px] font-black border transition-all duration-300 ${active ? 'bg-zinc-800 border-zinc-500 text-white' : 'bg-zinc-900 border-zinc-800 text-zinc-500 hover:text-zinc-300'}`}>
     {label}
   </button>
 );

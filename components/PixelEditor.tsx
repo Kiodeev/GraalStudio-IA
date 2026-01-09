@@ -1,5 +1,6 @@
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { playSound } from '../services/audioService';
 
 interface PixelEditorProps {
   onExport: (dataUrl: string) => void;
@@ -10,45 +11,50 @@ interface PixelEditorProps {
 const PixelEditor: React.FC<PixelEditorProps> = ({ onExport, onCritiqueRequest, activeReference }) => {
   const [gridSize, setGridSize] = useState({ w: 32, h: 32 });
   const [color, setColor] = useState('#ffffff');
-  const [tool, setTool] = useState<'pencil' | 'eraser' | 'picker' | 'fill' | 'line'>('pencil');
+  const [tool, setTool] = useState<'pencil' | 'eraser' | 'picker' | 'fill'>('pencil');
+  const [brushSize, setBrushSize] = useState(1);
   const [isDrawing, setIsDrawing] = useState(false);
-  const [zoom, setZoom] = useState(1);
+  const [zoom, setZoom] = useState(1.5);
   const [showGrid, setShowGrid] = useState(true);
   const [history, setHistory] = useState<ImageData[]>([]);
   const [hIndex, setHIndex] = useState(-1);
-  const [refOpacity, setRefOpacity] = useState(0.4);
   const [showProps, setShowProps] = useState(false);
+  const [recentColors, setRecentColors] = useState<string[]>([]);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const previewRef = useRef<HTMLCanvasElement>(null);
-  const startPos = useRef<{x: number, y: number} | null>(null);
+  const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
+  const lastPos = useRef<{ x: number, y: number } | null>(null);
 
-  useEffect(() => {
-    initCanvas();
-  }, [gridSize]);
+  const palette = [
+    '#ffffff', '#000000', '#ff0000', '#00ff00', '#0000ff', '#ffff00', 
+    '#ff00ff', '#00ffff', '#808080', '#c0c0c0', '#4a4a4a', '#f3a35f', 
+    '#8e5d3c', '#4b321c', '#1a1c2c', '#5d275d', '#b13e53', '#ef7d57', 
+    '#ffcd75', '#a7f070', '#38b764', '#257179', '#29366f', '#3b5dc9'
+  ];
 
-  const initCanvas = () => {
+  useEffect(() => { 
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
     if (!ctx) return;
+    ctxRef.current = ctx;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     saveState();
-  };
+  }, [gridSize.w, gridSize.h]);
 
-  const saveState = () => {
-    const canvas = canvasRef.current;
-    const ctx = canvas?.getContext('2d');
-    if (ctx) {
-      const data = ctx.getImageData(0, 0, gridSize.w, gridSize.h);
-      const newHistory = history.slice(0, hIndex + 1);
-      newHistory.push(data);
-      if (newHistory.length > 50) newHistory.shift();
-      setHistory(newHistory);
-      setHIndex(newHistory.length - 1);
+  const saveState = useCallback(() => {
+    if (ctxRef.current) {
+      const data = ctxRef.current.getImageData(0, 0, gridSize.w, gridSize.h);
+      setHistory(prev => {
+        const newHist = prev.slice(0, hIndex + 1);
+        newHist.push(data);
+        return newHist.slice(-30);
+      });
+      setHIndex(prev => Math.min(prev + 1, 29));
       updatePreview();
     }
-  };
+  }, [gridSize, hIndex]);
 
   const updatePreview = () => {
     if (canvasRef.current && previewRef.current) {
@@ -67,238 +73,265 @@ const PixelEditor: React.FC<PixelEditorProps> = ({ onExport, onCritiqueRequest, 
     const rect = canvas.getBoundingClientRect();
     const clientX = e.touches ? e.touches[0].clientX : e.clientX;
     const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    
-    const x = Math.floor(((clientX - rect.left) / rect.width) * gridSize.w);
-    const y = Math.floor(((clientY - rect.top) / rect.height) * gridSize.h);
-    return { x, y };
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    return {
+      x: Math.floor((clientX - rect.left) * scaleX),
+      y: Math.floor((clientY - rect.top) * scaleY)
+    };
   };
 
   const handleStart = (e: any) => {
-    if (e.cancelable) e.preventDefault();
     const pos = getPos(e);
     if (!pos) return;
     setIsDrawing(true);
-    startPos.current = pos;
-    const ctx = canvasRef.current?.getContext('2d');
-    if (ctx && tool !== 'line' && tool !== 'fill' && tool !== 'picker') {
-      drawPixel(ctx, pos.x, pos.y, color);
+    lastPos.current = pos;
+    const ctx = ctxRef.current;
+    if (!ctx) return;
+
+    if (tool === 'fill') {
+      floodFill(ctx, pos.x, pos.y, color);
+      saveState();
+      playSound.magic();
+    } else if (tool === 'picker') {
+      pickColor(ctx, pos.x, pos.y);
+      playSound.tool();
+    } else {
+      drawPixel(ctx, pos.x, pos.y);
+      playSound.pixel();
+    }
+    
+    // Adicionar cor recente
+    if (tool !== 'eraser' && tool !== 'picker') {
+        setRecentColors(prev => [color, ...prev.filter(c => c !== color)].slice(0, 8));
     }
   };
 
   const handleMove = (e: any) => {
-    if (e.cancelable) e.preventDefault();
-    if (!isDrawing) return;
+    if (!isDrawing || tool === 'fill' || tool === 'picker') return;
     const pos = getPos(e);
-    if (!pos) return;
-    const ctx = canvasRef.current?.getContext('2d');
-    if (ctx && (tool === 'pencil' || tool === 'eraser')) {
-      drawPixel(ctx, pos.x, pos.y, color);
-    }
-  };
-
-  const drawPixel = (ctx: CanvasRenderingContext2D, x: number, y: number, c: string) => {
-    if (x < 0 || x >= gridSize.w || y < 0 || y >= gridSize.h) return;
-    if (tool === 'eraser') {
-      ctx.clearRect(x, y, 1, 1);
-    } else {
-      ctx.fillStyle = c;
-      ctx.fillRect(x, y, 1, 1);
-    }
-  };
-
-  const handleEnd = (e: any) => {
-    if (!isDrawing) return;
-    const pos = getPos(e);
-    const ctx = canvasRef.current?.getContext('2d');
-    if (ctx && pos && startPos.current) {
-       if (tool === 'line') {
-          ctx.strokeStyle = color;
-          ctx.lineWidth = 1;
-          ctx.beginPath();
-          ctx.moveTo(startPos.current.x + 0.5, startPos.current.y + 0.5);
-          ctx.lineTo(pos.x + 0.5, pos.y + 0.5);
-          ctx.stroke();
-       } else if (tool === 'fill') {
-          floodFill(ctx, pos.x, pos.y, color);
-       } else if (tool === 'picker') {
-          const pixel = ctx.getImageData(pos.x, pos.y, 1, 1).data;
-          if (pixel[3] > 0) {
-            const hex = `#${((1 << 24) + (pixel[0] << 16) + (pixel[1] << 8) + pixel[2]).toString(16).slice(1)}`;
-            setColor(hex);
-            setTool('pencil');
-          }
-       }
-    }
-    setIsDrawing(false);
-    saveState();
-  };
-
-  const floodFill = (ctx: CanvasRenderingContext2D, x: number, y: number, fillColor: string) => {
-    const imageData = ctx.getImageData(0, 0, gridSize.w, gridSize.h);
-    const i = (y * imageData.width + x) * 4;
-    const target = [imageData.data[i], imageData.data[i+1], imageData.data[i+2], imageData.data[i+3]];
-    const fill = [parseInt(fillColor.slice(1,3), 16), parseInt(fillColor.slice(3,5), 16), parseInt(fillColor.slice(5,7), 16), 255];
+    if (!pos || !lastPos.current || !ctxRef.current) return;
     
-    if (target.every((v, idx) => v === fill[idx])) return;
+    const dx = Math.abs(pos.x - lastPos.current.x);
+    const dy = Math.abs(pos.y - lastPos.current.y);
+    const sx = lastPos.current.x < pos.x ? 1 : -1;
+    const sy = lastPos.current.y < pos.y ? 1 : -1;
+    let err = dx - dy;
+    let x0 = lastPos.current.x;
+    let y0 = lastPos.current.y;
 
+    while (true) {
+      drawPixel(ctxRef.current, x0, y0, false);
+      if (x0 === pos.x && y0 === pos.y) break;
+      const e2 = 2 * err;
+      if (e2 > -dy) { err -= dy; x0 += sx; }
+      if (e2 < dx) { err += dx; y0 += sy; }
+    }
+    
+    lastPos.current = pos;
+    // Otimização: atualizar preview apenas a cada poucos pixels ou no final
+    if (Math.random() > 0.8) updatePreview();
+  };
+
+  const handleEnd = () => {
+    if (isDrawing) {
+      setIsDrawing(false);
+      lastPos.current = null;
+      saveState();
+    }
+  };
+
+  const drawPixel = (ctx: CanvasRenderingContext2D, x: number, y: number, shouldUpdatePreview = true) => {
+    const half = Math.floor(brushSize / 2);
+    if (tool === 'eraser') {
+      ctx.clearRect(x - half, y - half, brushSize, brushSize);
+    } else {
+      ctx.fillStyle = color;
+      ctx.fillRect(x - half, y - half, brushSize, brushSize);
+    }
+    if (shouldUpdatePreview) updatePreview();
+  };
+
+  const pickColor = (ctx: CanvasRenderingContext2D, x: number, y: number) => {
+    const p = ctx.getImageData(x, y, 1, 1).data;
+    if (p[3] > 0) {
+      const hex = "#" + ("000000" + ((p[0] << 16) | (p[1] << 8) | p[2]).toString(16)).slice(-6);
+      setColor(hex);
+      setTool('pencil');
+    }
+  };
+
+  const floodFill = (ctx: CanvasRenderingContext2D, x: number, y: number, fillHex: string) => {
+    const imageData = ctx.getImageData(0, 0, gridSize.w, gridSize.h);
+    const targetColor = getPixelColor(imageData, x, y);
+    const fillColor = hexToRgba(fillHex);
+    if (colorsMatch(targetColor, fillColor)) return;
     const stack: [number, number][] = [[x, y]];
-    while(stack.length) {
-      const [cx, cy] = stack.pop()!;
-      if (cx < 0 || cx >= gridSize.w || cy < 0 || cy >= gridSize.h) continue;
-      const ci = (cy * imageData.width + cx) * 4;
-      if (imageData.data[ci] === target[0] && imageData.data[ci+1] === target[1] && imageData.data[ci+2] === target[2] && imageData.data[ci+3] === target[3]) {
-        imageData.data[ci] = fill[0]; imageData.data[ci+1] = fill[1]; imageData.data[ci+2] = fill[2]; imageData.data[ci+3] = 255;
-        stack.push([cx+1, cy], [cx-1, cy], [cx, cy+1], [cx, cy-1]);
+    while (stack.length > 0) {
+      const [curX, curY] = stack.pop()!;
+      if (curX >= 0 && curX < gridSize.w && curY >= 0 && curY < gridSize.h) {
+        if (colorsMatch(getPixelColor(imageData, curX, curY), targetColor)) {
+          setPixelColor(imageData, curX, curY, fillColor);
+          stack.push([curX - 1, curY], [curX + 1, curY], [curX, curY - 1], [curX, curY + 1]);
+        }
       }
     }
     ctx.putImageData(imageData, 0, 0);
   };
 
+  const getPixelColor = (img: ImageData, x: number, y: number) => {
+    const i = (y * img.width + x) * 4;
+    return [img.data[i], img.data[i+1], img.data[i+2], img.data[i+3]];
+  };
+
+  const setPixelColor = (img: ImageData, x: number, y: number, color: number[]) => {
+    const i = (y * img.width + x) * 4;
+    img.data[i] = color[0]; img.data[i+1] = color[1]; img.data[i+2] = color[2]; img.data[i+3] = color[3];
+  };
+
+  const colorsMatch = (c1: number[], c2: number[]) => c1[0]===c2[0] && c1[1]===c2[1] && c1[2]===c2[2] && c1[3]===c2[3];
+  const hexToRgba = (hex: string) => [parseInt(hex.slice(1,3), 16), parseInt(hex.slice(3,5), 16), parseInt(hex.slice(5,7), 16), 255];
+
   const undo = () => {
     if (hIndex > 0) {
-      const idx = hIndex - 1;
-      setHIndex(idx);
-      canvasRef.current?.getContext('2d')?.putImageData(history[idx], 0, 0);
-      updatePreview();
+      const newIdx = hIndex - 1;
+      const data = history[newIdx];
+      if (ctxRef.current && data) {
+        ctxRef.current.clearRect(0, 0, gridSize.w, gridSize.h);
+        ctxRef.current.putImageData(data, 0, 0);
+        setHIndex(newIdx);
+        updatePreview();
+        playSound.tool();
+      }
+    }
+  };
+
+  const clearCanvas = () => {
+    if (window.confirm("Apagar tudo?")) {
+      ctxRef.current?.clearRect(0, 0, gridSize.w, gridSize.h);
+      saveState();
+      playSound.clear();
     }
   };
 
   return (
-    <div className="workspace-container bg-zinc-950 select-none overflow-hidden h-full">
-      {/* Ferramentas Mobile: Barra Superior/Lateral compacta */}
-      <aside className="lg:w-16 h-14 lg:h-full border-b lg:border-r border-zinc-800 flex lg:flex-col items-center justify-between lg:justify-center p-2 lg:gap-3 bg-zinc-900 z-40">
-        <div className="flex lg:flex-col gap-2">
-          <ToolIcon active={tool==='pencil'} onClick={()=>setTool('pencil')} icon="P" label="Lápis" />
-          <ToolIcon active={tool==='eraser'} onClick={()=>setTool('eraser')} icon="E" label="Apagar" />
-          <ToolIcon active={tool==='line'} onClick={()=>setTool('line')} icon="L" label="Linha" />
-          <ToolIcon active={tool==='fill'} onClick={()=>setTool('fill')} icon="F" label="Balde" />
-          <ToolIcon active={tool==='picker'} onClick={()=>setTool('picker')} icon="K" label="Seringa" />
-        </div>
-        
-        <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-xl border-2 border-zinc-700 overflow-hidden relative shadow-lg">
-           <input type="color" value={color} onChange={e=>setColor(e.target.value)} className="absolute inset-0 w-full h-full scale-150 cursor-pointer" />
-        </div>
-      </aside>
-
-      {/* Espaço de Trabalho Central - Ocupação Máxima */}
-      <section className="flex-1 relative overflow-hidden checkerboard flex items-center justify-center p-4 lg:p-12">
-        <div className="relative shadow-2xl transition-transform duration-75" style={{ transform: `scale(${zoom})` }}>
-          {/* Camada de Referência (IA) */}
+    <div className="flex flex-col h-full bg-zinc-950 overflow-hidden select-none">
+      <main className="flex-1 relative checkerboard flex items-center justify-center p-4 overflow-hidden touch-none">
+        <div className="relative shadow-[0_0_100px_rgba(0,0,0,0.5)] transition-transform duration-200" style={{ transform: `scale(${zoom})` }}>
           {activeReference && (
-            <img 
-              src={activeReference} 
-              className="absolute inset-0 w-full h-full z-0 pixel-render pointer-events-none" 
-              style={{ opacity: refOpacity }}
-            />
+            <img src={activeReference} className="absolute inset-0 w-full h-full z-0 pixel-render pointer-events-none opacity-40" alt="ref" />
           )}
-
           <canvas
             ref={canvasRef}
             width={gridSize.w}
             height={gridSize.h}
-            onMouseDown={handleStart}
-            onMouseMove={handleMove}
-            onMouseUp={handleEnd}
-            onTouchStart={handleStart}
-            onTouchMove={handleMove}
-            onTouchEnd={handleEnd}
-            className="relative z-10 pixel-render bg-transparent border border-zinc-800 shadow-2xl"
+            onMouseDown={handleStart} onMouseMove={handleMove} onMouseUp={handleEnd} onMouseLeave={handleEnd}
+            onTouchStart={handleStart} onTouchMove={handleMove} onTouchEnd={handleEnd}
+            className="relative z-10 pixel-render bg-transparent border border-zinc-700/50"
             style={{ 
-                width: 'min(75vw, 65vh)', 
-                height: gridSize.h === 64 ? 'min(150vw, 130vh)' : 'min(75vw, 65vh)',
-                imageRendering: 'pixelated'
+                width: 'min(85vw, 65vh)', 
+                height: gridSize.h === 64 ? 'min(170vw, 130vh)' : 'min(85vw, 65vh)',
+                touchAction: 'none'
             }}
           />
-
           {showGrid && (
-             <div className="absolute inset-0 z-20 pointer-events-none opacity-20" 
-                  style={{ 
-                    backgroundImage: `linear-gradient(to right, #fff 1px, transparent 1px), linear-gradient(to bottom, #fff 1px, transparent 1px)`,
-                    backgroundSize: `calc(100% / ${gridSize.w}) calc(100% / ${gridSize.h})` 
-                  }} 
-             />
+            <div className="absolute inset-0 z-20 pointer-events-none opacity-[0.05]" 
+                 style={{ 
+                     backgroundSize: `calc(100% / ${gridSize.w}) calc(100% / ${gridSize.h})`, 
+                     backgroundImage: 'linear-gradient(to right, #fff 1px, transparent 1px), linear-gradient(to bottom, #fff 1px, transparent 1px)' 
+                 }} />
           )}
         </div>
 
-        {/* Zoom e Undo Flutuantes (Bottom Left) */}
-        <div className="absolute bottom-6 left-6 flex flex-col gap-3 z-30">
-          <div className="flex bg-zinc-900 border border-zinc-700 rounded-xl overflow-hidden shadow-2xl">
-             <button onClick={()=>setZoom(z=>Math.min(z+0.5, 6))} className="p-4 bg-zinc-800 hover:bg-zinc-700 active:scale-95 transition">➕</button>
-             <button onClick={()=>setZoom(1)} className="p-4 font-black text-xs text-zinc-400">100%</button>
-             <button onClick={()=>setZoom(z=>Math.max(z-0.5, 0.5))} className="p-4 bg-zinc-800 hover:bg-zinc-700 active:scale-95 transition">➖</button>
-          </div>
-          <button onClick={undo} disabled={hIndex <= 0} className="w-full py-4 bg-zinc-800 border border-zinc-700 rounded-xl font-bold text-xs disabled:opacity-30 shadow-2xl transition active:scale-95">↩️ DESFAZER</button>
+        {/* Floating Controls */}
+        <div className="absolute bottom-6 left-4 flex flex-col gap-3 z-40">
+           <div className="flex flex-col bg-zinc-900/90 backdrop-blur-md border border-zinc-800 rounded-2xl overflow-hidden shadow-2xl">
+             <button onClick={()=>{setZoom(z=>Math.min(z+0.5, 6)); playSound.tool();}} className="p-3 hover:bg-zinc-700 active:scale-90 transition-all text-lg">➕</button>
+             <button onClick={()=>{setZoom(z=>Math.max(z-0.5, 0.5)); playSound.tool();}} className="p-3 hover:bg-zinc-700 active:scale-90 transition-all text-lg">➖</button>
+           </div>
+           <button onClick={undo} disabled={hIndex <= 0} className="w-14 h-14 bg-zinc-900/90 backdrop-blur-md border border-zinc-800 rounded-2xl flex items-center justify-center shadow-2xl disabled:opacity-30 active:scale-90 transition-all text-xl">↩️</button>
         </div>
 
-        {/* Preview e Toggle Config (Top Right) */}
-        <div className="absolute top-6 right-6 z-30 flex flex-col items-end gap-3">
-            <button 
-                onClick={()=>setShowProps(!showProps)} 
-                className={`w-12 h-12 rounded-full shadow-2xl border flex items-center justify-center transition ${showProps ? 'bg-indigo-600 border-indigo-400' : 'bg-zinc-800 border-zinc-700'}`}
-            >
-                {showProps ? '✕' : '⚙️'}
-            </button>
-            
-            <div className="w-24 h-24 bg-zinc-900/90 border border-zinc-700 rounded-2xl overflow-hidden shadow-2xl flex flex-col p-2 group transition-all hover:scale-105">
-                <div className="flex-1 checkerboard rounded-lg overflow-hidden flex items-center justify-center">
-                    <canvas ref={previewRef} width={gridSize.w} height={gridSize.h} className="pixel-render w-full h-full object-contain" />
+        <div className="absolute top-4 right-4 flex flex-col items-end gap-4 z-40">
+            <div className="bg-zinc-900/90 p-1 rounded-xl border border-zinc-800 shadow-2xl">
+                <div className="w-16 h-16 rounded-lg overflow-hidden border border-zinc-700">
+                   <canvas ref={previewRef} width={gridSize.w} height={gridSize.h} className="w-full h-full pixel-render" />
                 </div>
-                <div className="text-[9px] text-center font-black py-1 text-zinc-500 uppercase tracking-tighter">PREVIEW REAL</div>
             </div>
+            <button onClick={clearCanvas} className="w-12 h-12 bg-zinc-900/90 border border-zinc-800 rounded-xl flex items-center justify-center shadow-2xl hover:bg-rose-900/50 transition-colors text-lg">🗑️</button>
+            
+            {/* Quick Size Brush */}
+            <div className="flex flex-col bg-zinc-900/90 backdrop-blur-md border border-zinc-800 rounded-xl p-1 gap-1">
+              <button onClick={()=>{setBrushSize(Math.min(10, brushSize+1)); playSound.tool();}} className="p-2 text-xs font-black text-indigo-500">+</button>
+              <div className="text-center font-black text-[9px] text-zinc-400">{brushSize}px</div>
+              <button onClick={()=>{setBrushSize(Math.max(1, brushSize-1)); playSound.tool();}} className="p-2 text-xs font-black text-indigo-500">-</button>
+            </div>
+
+            <button onClick={()=>{setShowProps(!showProps); playSound.tool();}} className={`w-14 h-14 rounded-full shadow-2xl border-2 flex items-center justify-center transition-all active:scale-90 ${showProps ? 'bg-indigo-600 border-indigo-400 rotate-90' : 'bg-zinc-800 border-zinc-700'}`}>
+               ⚙️
+            </button>
         </div>
-      </section>
+      </main>
 
-      {/* Painel Lateral de Propriedades (Collapsible no mobile) */}
-      <aside className={`fixed inset-x-0 bottom-0 lg:relative lg:inset-auto lg:w-80 border-t lg:border-t-0 lg:border-l border-zinc-800 bg-zinc-900/98 backdrop-blur-xl flex flex-col transition-all duration-300 z-50 ${showProps ? 'h-[70vh] lg:h-full p-8' : 'h-0 lg:h-full lg:p-8 overflow-hidden'}`}>
-        <div className="flex flex-col gap-8 h-full">
-          <div className="flex justify-between items-center">
-             <h4 className="font-black text-zinc-200 tracking-[0.15em] text-xs">ESTÚDIO DE ATIVOS</h4>
-             <button onClick={()=>setShowProps(false)} className="lg:hidden text-zinc-500 font-bold p-2">✕</button>
+      {/* Modern Toolbar */}
+      <footer className="h-24 bg-zinc-900/80 backdrop-blur-lg border-t border-zinc-800/50 flex items-center justify-around px-4 z-50 shrink-0">
+        <ToolBtn active={tool==='pencil'} onClick={()=>{setTool('pencil'); playSound.tool();}} icon="✏️" label="Pincel" />
+        <ToolBtn active={tool==='eraser'} onClick={()=>{setTool('eraser'); playSound.tool();}} icon="🧹" label="Apagar" />
+        <ToolBtn active={tool==='fill'} onClick={()=>{setTool('fill'); playSound.tool();}} icon="🧪" label="Balde" />
+        <ToolBtn active={tool==='picker'} onClick={()=>{setTool('picker'); playSound.tool();}} icon="💉" label="Conta" />
+        <div className="flex flex-col items-center gap-1">
+          <div className="w-14 h-14 rounded-2xl border-2 border-zinc-600 overflow-hidden relative shadow-lg active:scale-95 transition-transform">
+            <input type="color" value={color} onChange={e=>{setColor(e.target.value); playSound.tool();}} className="absolute inset-0 w-[200%] h-[200%] -top-1/2 -left-1/2 cursor-pointer" />
           </div>
+          <span className="text-[8px] font-black uppercase text-zinc-500 tracking-widest">Cor</span>
+        </div>
+      </footer>
 
-          <div>
-            <h4 className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-4">Molde do Ativo</h4>
-            <div className="grid grid-cols-2 gap-3">
-              <button onClick={()=>setGridSize({w:32, h:32})} className={`py-3.5 rounded-xl text-xs font-black transition border-2 ${gridSize.h===32 ? 'bg-indigo-600/20 border-indigo-500 text-indigo-400' : 'bg-zinc-800 border-transparent text-zinc-500'}`}>32x32 HEAD</button>
-              <button onClick={()=>setGridSize({w:32, h:64})} className={`py-3.5 rounded-xl text-xs font-black transition border-2 ${gridSize.h===64 ? 'bg-indigo-600/20 border-indigo-500 text-indigo-400' : 'bg-zinc-800 border-transparent text-zinc-500'}`}>32x64 BODY</button>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between p-4 bg-zinc-800/40 rounded-2xl border border-zinc-700/50">
-             <span className="text-xs font-black text-zinc-400 uppercase">Mostrar Grid</span>
-             <button onClick={()=>setShowGrid(!showGrid)} className={`w-14 h-7 rounded-full transition-colors relative ${showGrid ? 'bg-indigo-600' : 'bg-zinc-700'}`}>
-                <div className={`absolute top-1 w-5 h-5 bg-white rounded-full shadow-lg transition-all ${showGrid ? 'left-8' : 'left-1'}`} />
-             </button>
-          </div>
-
-          {activeReference && (
-            <div className="p-4 bg-zinc-800/40 rounded-2xl border border-zinc-700/50">
-              <div className="flex justify-between mb-3">
-                <h4 className="text-[10px] font-black text-zinc-500 uppercase">Opacidade Referência</h4>
-                <span className="text-[10px] font-black text-indigo-400">{Math.round(refOpacity*100)}%</span>
-              </div>
-              <input type="range" min="0" max="1" step="0.05" value={refOpacity} onChange={e=>setRefOpacity(parseFloat(e.target.value))} className="w-full accent-indigo-500 h-2 bg-zinc-700 rounded-lg appearance-none cursor-pointer" />
-            </div>
-          )}
-
-          <div className="mt-auto flex flex-col gap-4">
-             <button onClick={initCanvas} className="w-full py-3 bg-rose-900/10 text-rose-500 border border-rose-900/20 rounded-xl text-[10px] font-black transition uppercase tracking-widest hover:bg-rose-900/20">LIMPAR TELA</button>
-             <button onClick={()=>onExport(canvasRef.current!.toDataURL())} className="w-full py-5 bg-white text-black rounded-2xl text-sm font-black shadow-2xl active:scale-95 transition-all">FINALIZAR E EXPORTAR</button>
-             <button onClick={()=>onCritiqueRequest(canvasRef.current!.toDataURL())} className="w-full py-5 bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 rounded-2xl text-sm font-black shadow-xl active:scale-95 transition-all">AVALIAÇÃO MESTRE IA</button>
+      {/* Advanced Drawer */}
+      <div className={`fixed inset-x-0 bottom-0 bg-zinc-950/98 backdrop-blur-2xl border-t border-zinc-800 transition-transform duration-500 z-[60] p-8 pb-12 flex flex-col gap-8 rounded-t-[40px] ${showProps ? 'translate-y-0' : 'translate-y-full'}`}>
+        <div className="w-12 h-1.5 bg-zinc-800 rounded-full mx-auto -mt-2 mb-2" />
+        
+        <div className="space-y-4">
+          <h3 className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Templates Graal</h3>
+          <div className="grid grid-cols-2 gap-4">
+            <SizeBtn active={gridSize.h===32} onClick={()=>{setGridSize({w:32, h:32}); setShowProps(false); playSound.success();}} label="Cabeça (32x32)" />
+            <SizeBtn active={gridSize.h===64} onClick={()=>{setGridSize({w:32, h:64}); setShowProps(false); playSound.success();}} label="Corpo (32x64)" />
           </div>
         </div>
-      </aside>
+
+        <div className="space-y-4">
+          <h3 className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Cores Recentes</h3>
+          <div className="flex gap-3 overflow-x-auto pb-2 custom-scroll">
+             {recentColors.map((c, i) => (
+               <button key={i} onClick={()=>{setColor(c); playSound.tool();}} className="w-10 h-10 rounded-lg shrink-0 border border-zinc-800" style={{backgroundColor: c}} />
+             ))}
+             {palette.map((p, i) => (
+               <button key={'p'+i} onClick={()=>{setColor(p); playSound.tool();}} className="w-10 h-10 rounded-lg shrink-0 border border-zinc-800 opacity-40 hover:opacity-100" style={{backgroundColor: p}} />
+             ))}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+           <button onClick={()=>{onExport(canvasRef.current!.toDataURL()); playSound.success();}} className="py-5 bg-white text-black rounded-2xl font-black text-xs uppercase tracking-widest active:scale-95 transition-all">Salvar PNG</button>
+           <button onClick={()=>{onCritiqueRequest(canvasRef.current!.toDataURL()); playSound.magic();}} className="py-5 bg-indigo-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest active:scale-95 transition-all">Pedir Crítica</button>
+        </div>
+      </div>
     </div>
   );
 };
 
-const ToolIcon = ({ active, onClick, icon, label }: any) => (
-  <button 
-    onClick={onClick}
-    className={`w-11 h-11 lg:w-12 lg:h-12 rounded-xl flex items-center justify-center font-black text-base transition-all shadow-md ${active ? 'bg-indigo-600 text-white translate-y-0.5 scale-90 ring-2 ring-indigo-400 ring-offset-2 ring-offset-zinc-900' : 'bg-zinc-800 text-zinc-500 hover:bg-zinc-700 active:scale-95'}`}
-    title={label}
-  >
-    {icon}
+const ToolBtn = ({ active, onClick, icon, label }: any) => (
+  <button onClick={onClick} className="flex flex-col items-center gap-1 group">
+    <div className={`w-16 h-16 rounded-2xl flex items-center justify-center text-3xl transition-all group-active:scale-90 ${active ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-600/40 scale-110' : 'bg-zinc-800/50 text-zinc-500'}`}>
+      {icon}
+    </div>
+    <span className={`text-[8px] font-black uppercase tracking-widest ${active ? 'text-indigo-400' : 'text-zinc-600'}`}>{label}</span>
+  </button>
+);
+
+const SizeBtn = ({ active, onClick, label }: any) => (
+  <button onClick={onClick} className={`py-5 rounded-2xl text-[10px] font-black border-2 transition-all ${active ? 'bg-indigo-600/20 border-indigo-500 text-white shadow-lg' : 'bg-zinc-900 border-zinc-800 text-zinc-600'}`}>
+    {label}
   </button>
 );
 

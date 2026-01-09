@@ -1,0 +1,7 @@
+{
+  "name": "GRAAL CRAFT IA",
+  "description": "A comprehensive suite for Graal Online Classic artists featuring a pixel art editor, AI reference generator, and automated art critique.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}

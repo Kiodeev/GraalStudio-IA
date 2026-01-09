@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { generateArtReference } from '../services/geminiService';
+import { generateArtReference } from '../services/geminiService.ts';
 
 interface AIGeneratorProps {
   onUseAsRef: (url: string) => void;
@@ -20,56 +20,57 @@ const AIGenerator: React.FC<AIGeneratorProps> = ({ onUseAsRef }) => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto pb-20">
-      <div className="mb-12">
-        <h2 className="text-3xl md:text-5xl font-black mb-3 tracking-tighter text-zinc-100">BIBLIOTECA <span className="text-indigo-500">IA</span></h2>
-        <p className="text-zinc-500 text-sm md:text-base max-w-xl">Gere referências exclusivas e aplique-as como guias transparentes no seu canvas.</p>
+    <div className="max-w-4xl mx-auto pb-24">
+      <div className="mb-14">
+        <h2 className="text-4xl md:text-6xl font-black mb-4 tracking-tighter text-zinc-100 uppercase">REFERENCE <span className="text-indigo-500">LAB</span></h2>
+        <p className="text-zinc-500 text-sm md:text-base max-w-xl font-medium">Crie bases profissionais com inteligência artificial para servir de guia no seu editor.</p>
       </div>
       
-      <div className="flex flex-col sm:flex-row gap-3 p-1.5 bg-zinc-900/50 border border-zinc-800 rounded-2xl mb-12 shadow-inner">
+      <div className="flex flex-col sm:flex-row gap-4 p-2 bg-zinc-900/60 border border-zinc-800 rounded-3xl mb-14 shadow-inner">
         <input 
           type="text" 
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
-          placeholder="Ex: 'Samurai mask', 'Energy sword'..."
-          className="flex-1 bg-transparent px-5 py-4 focus:outline-none font-medium text-sm text-zinc-200"
+          placeholder="Ex: 'Futuristic samurai helmet', 'Obsidian dagger'..."
+          className="flex-1 bg-transparent px-6 py-5 focus:outline-none font-medium text-sm text-zinc-200 placeholder:text-zinc-700"
         />
         <button 
           onClick={handleGenerate}
           disabled={loading || !prompt}
-          className="bg-indigo-600 px-8 py-4 rounded-xl font-bold hover:bg-indigo-500 disabled:opacity-20 transition-all text-xs uppercase tracking-widest text-white shadow-lg shadow-indigo-500/10 active:scale-95"
+          className="bg-indigo-600 px-10 py-5 rounded-2xl font-bold hover:bg-indigo-500 disabled:opacity-20 transition-all text-xs uppercase tracking-[0.2em] text-white shadow-xl shadow-indigo-500/10 active:scale-95"
         >
-          {loading ? 'Processando...' : 'Criar Guia'}
+          {loading ? 'Creating...' : 'Generate'}
         </button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-        <div className="bg-zinc-900/40 rounded-[32px] p-8 border border-zinc-800 flex flex-col items-center justify-center min-h-[350px] shadow-sm">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+        <div className="bg-zinc-900/30 rounded-[48px] p-10 border border-zinc-800 flex flex-col items-center justify-center min-h-[400px] shadow-sm relative overflow-hidden group">
+          <div className="absolute inset-0 bg-indigo-500/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
           {result ? (
-            <div className="w-full flex flex-col items-center">
-              <div className="w-full max-w-[240px] aspect-square bg-zinc-950 rounded-2xl p-6 mb-8 shadow-2xl flex items-center justify-center border border-zinc-800">
+            <div className="w-full flex flex-col items-center relative z-10">
+              <div className="w-full max-w-[260px] aspect-square bg-zinc-950 rounded-[40px] p-8 mb-10 shadow-2xl flex items-center justify-center border border-zinc-800">
                 <img src={result} className="w-full h-full pixel-render" alt="Reference" />
               </div>
               <button 
                 onClick={() => onUseAsRef(result)}
-                className="w-full py-5 bg-zinc-100 text-black rounded-xl font-bold hover:bg-white transition-all active:scale-95 text-[10px] uppercase tracking-[0.2em] shadow-md"
+                className="w-full py-6 bg-zinc-100 text-black rounded-2xl font-black hover:bg-white transition-all active:scale-95 text-[10px] uppercase tracking-[0.3em] shadow-xl"
               >
-                Usar como Guia
+                Apply as Overlay
               </button>
             </div>
           ) : (
-            <div className="text-zinc-700 text-center py-10">
-              <span className="text-6xl block mb-6 grayscale opacity-20">🎨</span>
-              <p className="text-[10px] font-bold uppercase tracking-widest opacity-30">Descreva seu item acima</p>
+            <div className="text-zinc-700 text-center py-12">
+              <span className="text-7xl block mb-8 grayscale opacity-20">⚡</span>
+              <p className="text-[10px] font-black uppercase tracking-[0.4em] opacity-40">Awaiting prompt</p>
             </div>
           )}
         </div>
 
-        <div className="space-y-6">
-          <h3 className="text-xs font-black text-zinc-400 uppercase tracking-[0.3em] mb-4">Parâmetros de Estúdio</h3>
-          <TipItem icon="📐" title="Templates Reais" desc="Peça por 'front view' para itens de cabeça ou 'side' para espadas." />
-          <TipItem icon="✨" title="Modo Fantasma" desc="A imagem aparecerá com 40% de opacidade no seu editor principal." />
-          <TipItem icon="💎" title="Qualidade Pro" desc="O sistema foca em pixel art 32x32 com paleta reduzida." />
+        <div className="space-y-8">
+          <h3 className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.5em] mb-4">Studio Parameters</h3>
+          <TipItem icon="📐" title="Structure" desc="Especifique vistas (front/side) para templates de corpos e cabeças." />
+          <TipItem icon="✨" title="Overlay Mode" desc="A imagem aplicada terá 40% de opacidade para facilitar o tracing." />
+          <TipItem icon="💎" title="Resolution" desc="Foco em pixel art 32x32 compatível com o padrão do jogo." />
         </div>
       </div>
     </div>
@@ -77,11 +78,11 @@ const AIGenerator: React.FC<AIGeneratorProps> = ({ onUseAsRef }) => {
 };
 
 const TipItem = ({icon, title, desc}: any) => (
-  <div className="flex gap-4 p-5 bg-zinc-900/20 border border-zinc-800/50 rounded-2xl">
-    <span className="text-xl">{icon}</span>
+  <div className="flex gap-6 p-7 bg-zinc-900/20 border border-zinc-800/40 rounded-[32px] hover:bg-zinc-900/40 transition-colors">
+    <span className="text-2xl">{icon}</span>
     <div>
-      <h4 className="text-zinc-200 font-bold text-xs mb-1 uppercase tracking-wider">{title}</h4>
-      <p className="text-zinc-500 text-[10px] leading-relaxed">{desc}</p>
+      <h4 className="text-zinc-200 font-bold text-xs mb-1.5 uppercase tracking-widest">{title}</h4>
+      <p className="text-zinc-500 text-[10px] font-medium leading-relaxed">{desc}</p>
     </div>
   </div>
 );

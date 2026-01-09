@@ -49,24 +49,23 @@ const AICritique: React.FC<AICritiqueProps> = ({ externalImage, onImageProcessed
   };
 
   return (
-    <div className="max-w-6xl mx-auto h-full flex flex-col">
-      <div className="mb-8 shrink-0">
-        <h2 className="text-4xl md:text-6xl font-black text-rose-500 tracking-tighter uppercase">MESTRE <span className="text-white">PIXEL</span></h2>
-        <p className="text-zinc-500 text-[10px] font-black uppercase tracking-[0.4em] mt-2">Neural expertise for retro graphics</p>
+    <div className="max-w-5xl mx-auto h-full flex flex-col pb-20">
+      <div className="mb-12 shrink-0">
+        <h2 className="text-4xl md:text-6xl font-black text-indigo-500 tracking-tighter uppercase">MESTRE <span className="text-white">PIXEL</span></h2>
+        <p className="text-zinc-500 text-[10px] font-black uppercase tracking-[0.5em] mt-3">Advanced feedback for retro artists</p>
       </div>
 
-      <div className="flex-1 flex flex-col lg:grid lg:grid-cols-12 gap-8 min-h-0 overflow-hidden">
-        {/* Coluna de Visualização (Fixa no Topo no Mobile) */}
-        <div className="lg:col-span-5 flex flex-col gap-6 shrink-0">
-          <div className="aspect-square bg-zinc-900 rounded-[3rem] border-4 border-zinc-800 flex items-center justify-center overflow-hidden relative shadow-2xl group transition-all duration-500 hover:border-rose-500/30">
+      <div className="flex-1 flex flex-col lg:grid lg:grid-cols-12 gap-12 min-h-0 overflow-hidden">
+        <div className="lg:col-span-5 flex flex-col gap-8 shrink-0">
+          <div className="aspect-square bg-zinc-900 rounded-[50px] border border-zinc-800 flex items-center justify-center overflow-hidden relative shadow-2xl group transition-all duration-700 hover:border-indigo-500/40">
             {selectedImage ? (
-              <div className="w-full h-full p-12 flex items-center justify-center bg-zinc-950/50">
-                <img src={selectedImage} alt="Arte" className="max-w-full max-h-full object-contain pixel-render scale-150 shadow-2xl" />
+              <div className="w-full h-full p-16 flex items-center justify-center bg-zinc-950/30">
+                <img src={selectedImage} alt="Arte" className="max-w-full max-h-full object-contain pixel-render scale-150 shadow-2xl transition-transform duration-500 group-hover:scale-[1.6]" />
               </div>
             ) : (
-              <label className="cursor-pointer flex flex-col items-center justify-center w-full h-full text-zinc-700 hover:bg-zinc-800/20 transition-all">
-                <span className="text-7xl mb-4 grayscale opacity-30">🗿</span>
-                <span className="text-xs font-black uppercase tracking-widest">Carregar Obra</span>
+              <label className="cursor-pointer flex flex-col items-center justify-center w-full h-full text-zinc-700 hover:bg-zinc-800/10 transition-all">
+                <span className="text-7xl mb-6 grayscale opacity-20">🗿</span>
+                <span className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40">Upload Masterpiece</span>
                 <input type="file" className="hidden" onChange={handleFileChange} accept="image/*" />
               </label>
             )}
@@ -75,38 +74,36 @@ const AICritique: React.FC<AICritiqueProps> = ({ externalImage, onImageProcessed
           <button 
             onClick={() => selectedImage && handleCritiqueInternal(selectedImage)}
             disabled={!selectedImage || loading}
-            className="w-full bg-rose-600 py-6 rounded-3xl font-black text-xs uppercase tracking-[0.3em] shadow-xl hover:bg-rose-500 disabled:opacity-30 transition-all active:scale-95 flex items-center justify-center gap-4"
+            className="w-full bg-zinc-100 py-6 rounded-3xl font-black text-black text-xs uppercase tracking-[0.3em] shadow-2xl hover:bg-white disabled:opacity-10 transition-all active:scale-95 flex items-center justify-center gap-4"
           >
-            {loading ? <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" /> : "ANALISAR AGORA"}
+            {loading ? <div className="w-4 h-4 border-2 border-black/10 border-t-black rounded-full animate-spin" /> : "Request Review"}
           </button>
         </div>
 
-        {/* Coluna de Feedback (Rolagem Independente) */}
         <div className="lg:col-span-7 flex flex-col min-h-0">
-          <div className={`flex-1 rounded-[3rem] p-8 md:p-12 border-2 overflow-hidden flex flex-col transition-all duration-700 ${feedback ? 'bg-zinc-900 border-rose-500/20' : 'bg-zinc-900/30 border-zinc-800'}`}>
-            <div className="flex items-center gap-3 mb-8 shrink-0">
-              <div className={`w-2 h-2 rounded-full ${loading ? 'bg-yellow-500 animate-pulse' : feedback ? 'bg-rose-500' : 'bg-zinc-700'}`} />
-              <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Relatório Técnico</span>
+          <div className={`flex-1 rounded-[50px] p-10 md:p-14 border border-zinc-800/60 overflow-hidden flex flex-col transition-all duration-1000 ${feedback ? 'bg-zinc-900 shadow-2xl' : 'bg-zinc-900/20'}`}>
+            <div className="flex items-center gap-3 mb-10 shrink-0">
+              <div className={`w-2.5 h-2.5 rounded-full ${loading ? 'bg-yellow-500 animate-pulse' : feedback ? 'bg-indigo-500' : 'bg-zinc-800'}`} />
+              <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Master Analysis</span>
             </div>
 
-            <div className="flex-1 overflow-y-auto custom-scroll pr-4">
+            <div className="flex-1 overflow-y-auto custom-scroll pr-6">
               {feedback ? (
-                <div className="text-zinc-200 text-base md:text-xl leading-relaxed whitespace-pre-wrap font-medium italic animate-in fade-in slide-in-from-bottom-4 duration-700">
+                <div className="text-zinc-200 text-base md:text-xl leading-relaxed whitespace-pre-wrap font-medium italic animate-in fade-in slide-in-from-bottom-6 duration-1000">
                   {feedback}
                 </div>
               ) : (
-                <div className="h-full flex flex-col items-center justify-center text-center opacity-20 py-12">
-                  <span className="text-6xl mb-6 grayscale">👁️</span>
-                  <p className="text-xs font-black uppercase tracking-widest">O Mestre aguarda sua arte</p>
-                  <p className="text-[10px] mt-4 max-w-[250px] leading-relaxed">Avaliações sobre cores, sombreamento, AA e anatomia de jogo.</p>
+                <div className="h-full flex flex-col items-center justify-center text-center opacity-20 py-16">
+                  <span className="text-6xl mb-8 grayscale">👁️</span>
+                  <p className="text-[10px] font-black uppercase tracking-[0.4em] max-w-[280px] leading-relaxed">The Master awaits your artistic contribution</p>
                 </div>
               )}
             </div>
 
             {feedback && (
-              <div className="mt-8 pt-6 border-t border-zinc-800/50 flex items-center justify-between shrink-0">
-                <span className="text-[8px] font-black text-rose-500 uppercase tracking-widest">Studio v3.5 Professional</span>
-                <button onClick={()=>{setFeedback(null); setSelectedImage(null); playSound.tool();}} className="text-[8px] font-black text-zinc-600 uppercase hover:text-white transition-colors">Nova Análise</button>
+              <div className="mt-10 pt-8 border-t border-zinc-800/40 flex items-center justify-between shrink-0">
+                <span className="text-[8px] font-black text-indigo-500 uppercase tracking-widest">Studio Pro Analysis</span>
+                <button onClick={()=>{setFeedback(null); setSelectedImage(null); playSound.tool();}} className="text-[9px] font-bold text-zinc-600 uppercase hover:text-white transition-colors">Clear Result</button>
               </div>
             )}
           </div>

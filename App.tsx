@@ -33,7 +33,7 @@ export default function App() {
             <span className="font-black text-white italic text-sm">W</span>
           </div>
           <div className="flex flex-col leading-none">
-            <h1 className="text-sm font-black tracking-tight uppercase italic text-white">Wickler Genesis</h1>
+            <h1 className="text-sm font-black tracking-tight uppercase italic text-white">Wickler Studio</h1>
           </div>
         </div>
 

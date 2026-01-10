@@ -22,7 +22,7 @@ const AIGenerator: React.FC<AIGeneratorProps> = ({ onUseAsRef }) => {
   return (
     <div className="max-w-4xl mx-auto pb-10">
       <div className="mb-14 text-center">
-        <h2 className="text-4xl md:text-6xl font-black mb-4 tracking-tighter text-white uppercase italic">FORJA <span className="text-indigo-500">GÊNESIS</span></h2>
+        <h2 className="text-4xl md:text-6xl font-black mb-4 tracking-tighter text-white uppercase italic">FORJA <span className="text-indigo-500">STUDIO</span></h2>
         <p className="text-zinc-500 text-[10px] font-black uppercase tracking-[0.5em]">Materialize referências para seus sprites</p>
       </div>
       
